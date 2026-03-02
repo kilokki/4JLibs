@@ -21,7 +21,7 @@ int user_write_data_bytes_written()
 
 void user_write_data(png_struct_def* png_ptr, unsigned char* data, size_t length)
 {
-    int canWrite = (int)((unsigned char*)dataEnd - (unsigned char*)dataCurr);
+    int canWrite = (int)(dataEnd - dataCurr);
     if ((int)length < canWrite)
         canWrite = (int)length;
     memcpy(dataCurr, data, canWrite);
@@ -113,7 +113,7 @@ void Renderer::TextureData(int width, int height, void* data, int level, C4JRend
         desc.Height = height;
         desc.MipLevels = m_textures[idx].mipLevels;
         desc.ArraySize = 1;
-        desc.Format = (DXGI_FORMAT)textureFormats[format];
+        desc.Format = textureFormats[format];
         desc.SampleDesc.Count = 1;
         desc.SampleDesc.Quality = 0;
         desc.Usage = D3D11_USAGE_DEFAULT;
@@ -121,18 +121,12 @@ void Renderer::TextureData(int width, int height, void* data, int level, C4JRend
         desc.CPUAccessFlags = 0;
         desc.MiscFlags = 0;
 
-        m_pDevice->CreateTexture2D(&desc, NULL, (ID3D11Texture2D**)&m_textures[idx].texture);
+        m_pDevice->CreateTexture2D(&desc, NULL, &m_textures[idx].texture);
         m_pDevice->CreateShaderResourceView(m_textures[idx].texture, NULL, &m_textures[idx].view);
     }
 
-    c.m_pDeviceContext->UpdateSubresource(
-        m_textures[idx].texture,
-        level,
-        NULL,
-        data,
-        width * 4,
-        width * height * 4
-    );
+    c.m_pDeviceContext->UpdateSubresource(m_textures[idx].texture, level, NULL,
+        data, width * 4, width * height * 4);
 }
 
 void Renderer::TextureDataUpdate(int xoffset, int yoffset, int width, int height, void* data, int level)

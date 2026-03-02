@@ -359,7 +359,15 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
         backBufferSampleCount = backDesc.SampleDesc.Count;
         backBufferSampleQuality = backDesc.SampleDesc.Quality;
         m_pDevice->CreateRenderTargetView(backBuffer, nullptr, &renderTargetView);
-        m_pDevice->CreateShaderResourceView(backBuffer, nullptr, &renderTargetShaderResourceView);
+
+        D3D11_TEXTURE2D_DESC srvDesc = backDesc;
+        srvDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        srvDesc.MiscFlags = 0;
+        ID3D11Texture2D *srvTexture = nullptr;
+        m_pDevice->CreateTexture2D(&srvDesc, nullptr, &srvTexture);
+        m_pDevice->CreateShaderResourceView(srvTexture, nullptr, &renderTargetShaderResourceView);
+        
+        srvTexture->Release();
         backBuffer->Release();
     }
 
