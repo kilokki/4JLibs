@@ -96,7 +96,7 @@ ID3D11SamplerState *Renderer::GetManagedSamplerState()
 void Renderer::StateSetFogEnable(bool enable)
 {
     Context &c = getContext();
-    c.fogEnabled = enable ? TRUE : FALSE;
+    c.fogEnabled = enable;
 }
 
 void Renderer::StateSetFogMode(int mode)
@@ -142,7 +142,7 @@ void Renderer::StateSetLightingEnable(bool enable)
         return;
     }
 
-    c.lightingEnabled = enable ? TRUE : FALSE;
+    c.lightingEnabled = enable;
 }
 
 void Renderer::StateSetLightColour(int light, float red, float green, float blue)
@@ -161,7 +161,7 @@ void Renderer::StateSetLightColour(int light, float red, float green, float blue
     c.lightColour[light].y = green;
     c.lightColour[light].z = blue;
     c.lightColour[light].w = 1.0f;
-    c.lightingDirty = TRUE;
+    c.lightingDirty = true;
 }
 
 void Renderer::StateSetLightAmbientColour(float red, float green, float blue)
@@ -177,7 +177,7 @@ void Renderer::StateSetLightAmbientColour(float red, float green, float blue)
     c.lightAmbientColour.y = green;
     c.lightAmbientColour.z = blue;
     c.lightAmbientColour.w = 1.0f;
-    c.lightingDirty = TRUE;
+    c.lightingDirty = true;
 }
 
 void Renderer::StateSetLightEnable(int light, bool enable)
@@ -192,8 +192,8 @@ void Renderer::StateSetLightEnable(int light, bool enable)
         return;
     }
 
-    c.lightEnabled[light] = enable ? TRUE : FALSE;
-    c.lightingDirty = TRUE;
+    c.lightEnabled[light] = enable;
+    c.lightingDirty = true;
 }
 
 void Renderer::StateSetColour(float r, float g, float b, float a)
@@ -225,7 +225,7 @@ void Renderer::StateSetDepthMask(bool enable)
 
     c.depthStencilDesc.DepthWriteMask = enable ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
     c.m_pDeviceContext->OMSetDepthStencilState(GetManagedDepthStencilState(), 0);
-    c.depthWriteEnabled = enable ? TRUE : FALSE;
+    c.depthWriteEnabled = enable;
 }
 
 void Renderer::StateSetBlendEnable(bool enable)
@@ -237,8 +237,8 @@ void Renderer::StateSetBlendEnable(bool enable)
         return;
     }
 
-    c.blendDesc.RenderTarget[0].BlendEnable = enable ? TRUE : FALSE;
-    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFFu);
+    c.blendDesc.RenderTarget[0].BlendEnable = enable;
+    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFF);
 }
 
 void Renderer::StateSetBlendFunc(int src, int dst)
@@ -252,7 +252,7 @@ void Renderer::StateSetBlendFunc(int src, int dst)
 
     c.blendDesc.RenderTarget[0].SrcBlend = static_cast<D3D11_BLEND>(src);
     c.blendDesc.RenderTarget[0].DestBlend = static_cast<D3D11_BLEND>(dst);
-    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFFu);
+    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFF);
 }
 
 void Renderer::StateSetBlendFactor(unsigned int colour)
@@ -265,11 +265,11 @@ void Renderer::StateSetBlendFactor(unsigned int colour)
     }
 
     const float scale = 255.0f;
-    c.blendFactor[0] = static_cast<float>((colour >> 0) & 0xFFu) / scale;
-    c.blendFactor[1] = static_cast<float>((colour >> 8) & 0xFFu) / scale;
-    c.blendFactor[2] = static_cast<float>((colour >> 16) & 0xFFu) / scale;
-    c.blendFactor[3] = static_cast<float>((colour >> 24) & 0xFFu) / scale;
-    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFFu);
+    c.blendFactor[0] = static_cast<float>((colour >> 0) & 0xFF) / scale;
+    c.blendFactor[1] = static_cast<float>((colour >> 8) & 0xFF) / scale;
+    c.blendFactor[2] = static_cast<float>((colour >> 16) & 0xFF) / scale;
+    c.blendFactor[3] = static_cast<float>((colour >> 24) & 0xFF) / scale;
+    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFF);
 }
 
 void Renderer::StateSetAlphaFunc(int, float param)
@@ -308,7 +308,7 @@ void Renderer::StateSetFaceCull(bool enable)
 
     c.rasterizerDesc.CullMode = enable ? D3D11_CULL_BACK : D3D11_CULL_NONE;
     c.m_pDeviceContext->RSSetState(GetManagedRasterizerState());
-    c.faceCullEnabled = enable ? TRUE : FALSE;
+    c.faceCullEnabled = enable;
 }
 
 void Renderer::StateSetFaceCullCW(bool enable)
@@ -335,7 +335,7 @@ void Renderer::StateSetWriteEnable(bool red, bool green, bool blue, bool alpha)
     mask |= alpha ? 0x8 : 0;
 
     c.blendDesc.RenderTarget[0].RenderTargetWriteMask = mask;
-    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFFu);
+    c.m_pDeviceContext->OMSetBlendState(GetManagedBlendState(), c.blendFactor, 0xFFFFFFFF);
 }
 
 void Renderer::StateSetDepthTestEnable(bool enable)
@@ -347,15 +347,15 @@ void Renderer::StateSetDepthTestEnable(bool enable)
         return;
     }
 
-    c.depthStencilDesc.DepthEnable = enable ? TRUE : FALSE;
+    c.depthStencilDesc.DepthEnable = enable;
     c.m_pDeviceContext->OMSetDepthStencilState(GetManagedDepthStencilState(), 0);
-    c.depthTestEnabled = enable ? TRUE : FALSE;
+    c.depthTestEnabled = enable;
 }
 
 void Renderer::StateSetAlphaTestEnable(bool enable)
 {
     Context &c = getContext();
-    c.alphaTestEnabled = enable ? TRUE : FALSE;
+    c.alphaTestEnabled = enable;
 
     const float alpha[4] = {0.0f, 0.0f, 0.0f, enable ? c.alphaReference : 0.0f};
     D3D11_MAPPED_SUBRESOURCE mapped = {};
@@ -454,7 +454,7 @@ void Renderer::UpdateLightingState()
     std::memcpy(mapped.pData, c.lightDirection, lightingBytes);
     c.m_pDeviceContext->Unmap(c.m_lightingStateBuffer, 0);
 
-    c.lightingDirty = FALSE;
+    c.lightingDirty = false;
 }
 
 void Renderer::StateSetLightDirection(int light, float x, float y, float z)
@@ -476,7 +476,7 @@ void Renderer::StateSetLightDirection(int light, float x, float y, float z)
     const DirectX::XMVECTOR normalized = DirectX::XMVector3Normalize(transformed);
 
     DirectX::XMStoreFloat4(&c.lightDirection[light], normalized);
-    c.lightingDirty = TRUE;
+    c.lightingDirty = true;
 }
 
 void Renderer::StateSetViewport(C4JRender::eViewportType viewportType)
@@ -588,7 +588,7 @@ void Renderer::StateSetStencil(D3D11_COMPARISON_FUNC function, uint8_t stencil_r
     Context &c = getContext();
 
     D3D11_DEPTH_STENCIL_DESC desc = c.depthStencilDesc;
-    desc.StencilEnable = TRUE;
+    desc.StencilEnable = true;
     desc.StencilReadMask = stencil_func_mask;
     desc.StencilWriteMask = stencil_write_mask;
     desc.FrontFace.StencilFunc = function;

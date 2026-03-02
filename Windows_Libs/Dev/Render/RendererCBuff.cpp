@@ -250,17 +250,19 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
     int shaderVertexType = drawVertexType;
     bool matrixOverride = false;
 
-    for (std::vector<Command>::const_iterator it = m_commands.begin(); it != m_commands.end(); ++it)
+    for (const Command &command : m_commands)
     {
-        const Command &command = *it;
+
         switch (command.m_command_type)
         {
         case COMMAND_ADD_MATRIX:
         {
             if (drawVertexType == C4JRender::VERTEX_TYPE_COMPRESSED)
             {
-                const float row[4] = {command.add_matrix.m_matrix[12], command.add_matrix.m_matrix[13], command.add_matrix.m_matrix[14],
-                                      command.add_matrix.m_matrix[15]};
+                const float row[4] = {
+                    command.add_matrix.m_matrix[12], command.add_matrix.m_matrix[13],
+                    command.add_matrix.m_matrix[14], command.add_matrix.m_matrix[15]
+                };
                 D3D11_MAPPED_SUBRESOURCE mappedAux0 = {};
                 c.m_pDeviceContext->Map(c.m_compressedTranslationBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedAux0);
                 memcpy(mappedAux0.pData, row, sizeof(row));
@@ -352,21 +354,21 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
         }
         case COMMAND_SET_DEPTH_MASK:
         {
-            c.depthWriteEnabled = command.set_depth_mask.m_enable ? TRUE : FALSE;
+            c.depthWriteEnabled = command.set_depth_mask.m_enable;
             c.depthStencilDesc.DepthWriteMask = command.set_depth_mask.m_enable ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
             c.m_pDeviceContext->OMSetDepthStencilState(InternalRenderManager.GetManagedDepthStencilState(), 0);
             break;
         }
         case COMMAND_SET_DEPTH_TEST:
         {
-            c.depthTestEnabled = command.set_depth_test.m_enable ? TRUE : FALSE;
-            c.depthStencilDesc.DepthEnable = command.set_depth_test.m_enable ? TRUE : FALSE;
+            c.depthTestEnabled = command.set_depth_test.m_enable;
+            c.depthStencilDesc.DepthEnable = command.set_depth_test.m_enable;
             c.m_pDeviceContext->OMSetDepthStencilState(InternalRenderManager.GetManagedDepthStencilState(), 0);
             break;
         }
         case COMMAND_SET_LIGHTING_ENABLE:
         {
-            c.lightingEnabled = command.set_lighting_enable.m_enable ? TRUE : FALSE;
+            c.lightingEnabled = command.set_lighting_enable.m_enable;
             break;
         }
         case COMMAND_SET_LIGHT_ENABLE:
@@ -374,8 +376,8 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
             const int light = command.set_light_enable.m_light_index;
             if (light >= 0 && light < 2)
             {
-                c.lightEnabled[light] = command.set_light_enable.m_enable ? TRUE : FALSE;
-                c.lightingDirty = TRUE;
+                c.lightEnabled[light] = command.set_light_enable.m_enable;
+                c.lightingDirty = true;
             }
             break;
         }
@@ -388,7 +390,7 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
                 c.lightDirection[light].y = command.set_light_direction.m_direction[1];
                 c.lightDirection[light].z = command.set_light_direction.m_direction[2];
                 c.lightDirection[light].w = command.set_light_direction.m_direction[3];
-                c.lightingDirty = TRUE;
+                c.lightingDirty = true;
             }
             break;
         }
@@ -401,7 +403,7 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
                 c.lightColour[light].y = command.set_light_colour.m_color[1];
                 c.lightColour[light].z = command.set_light_colour.m_color[2];
                 c.lightColour[light].w = 1.0f;
-                c.lightingDirty = TRUE;
+                c.lightingDirty = true;
             }
             break;
         }
@@ -411,36 +413,36 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
             c.lightAmbientColour.y = command.set_light_ambient_colour.m_color[1];
             c.lightAmbientColour.z = command.set_light_ambient_colour.m_color[2];
             c.lightAmbientColour.w = 1.0f;
-            c.lightingDirty = TRUE;
+            c.lightingDirty = true;
             break;
         }
         case COMMAND_SET_BLEND_ENABLE:
         {
-            c.blendDesc.RenderTarget[0].BlendEnable = command.set_blend_enable.m_enable ? TRUE : FALSE;
+            c.blendDesc.RenderTarget[0].BlendEnable = command.set_blend_enable.m_enable;
             break;
         }
         case COMMAND_SET_BLEND_FUNC:
         {
             c.blendDesc.RenderTarget[0].SrcBlend = static_cast<D3D11_BLEND>(command.set_blend_func.m_src);
             c.blendDesc.RenderTarget[0].DestBlend = static_cast<D3D11_BLEND>(command.set_blend_func.m_dst);
-            c.m_pDeviceContext->OMSetBlendState(InternalRenderManager.GetManagedBlendState(), c.blendFactor, 0xFFFFFFFFu);
+            c.m_pDeviceContext->OMSetBlendState(InternalRenderManager.GetManagedBlendState(), c.blendFactor, 0xFFFFFFFF);
             break;
         }
         case COMMAND_SET_BLEND_FACTOR:
         {
             const unsigned int factor = command.set_blend_factor.m_blend_factor;
-            c.blendFactor[0] = float((factor >> 0) & 0xFFu) / 255.0f;
-            c.blendFactor[1] = float((factor >> 8) & 0xFFu) / 255.0f;
-            c.blendFactor[2] = float((factor >> 16) & 0xFFu) / 255.0f;
-            c.blendFactor[3] = float((factor >> 24) & 0xFFu) / 255.0f;
-            c.m_pDeviceContext->OMSetBlendState(InternalRenderManager.GetManagedBlendState(), c.blendFactor, 0xFFFFFFFFu);
+            c.blendFactor[0] = float((factor >> 0) & 0xFF) / 255.0f;
+            c.blendFactor[1] = float((factor >> 8) & 0xFF) / 255.0f;
+            c.blendFactor[2] = float((factor >> 16) & 0xFF) / 255.0f;
+            c.blendFactor[3] = float((factor >> 24) & 0xFF) / 255.0f;
+            c.m_pDeviceContext->OMSetBlendState(InternalRenderManager.GetManagedBlendState(), c.blendFactor, 0xFFFFFFFF);
             break;
         }
         case COMMAND_SET_FACE_CULL:
         {
             c.rasterizerDesc.CullMode = command.set_face_cull.m_enable ? D3D11_CULL_BACK : D3D11_CULL_NONE;
             c.m_pDeviceContext->RSSetState(InternalRenderManager.GetManagedRasterizerState());
-            c.faceCullEnabled = command.set_face_cull.m_enable ? TRUE : FALSE;
+            c.faceCullEnabled = command.set_face_cull.m_enable;
             break;
         }
         default:

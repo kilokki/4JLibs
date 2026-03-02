@@ -108,9 +108,9 @@ Renderer::Context::Context(ID3D11Device* device, ID3D11DeviceContext* deviceCont
         stackPos[i] = 0;
     }
 
-    blendDesc.AlphaToCoverageEnable = FALSE;
-    blendDesc.IndependentBlendEnable = FALSE;
-    blendDesc.RenderTarget[0].BlendEnable = FALSE;
+    blendDesc.AlphaToCoverageEnable = false;
+    blendDesc.IndependentBlendEnable = false;
+    blendDesc.RenderTarget[0].BlendEnable = false;
     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
     blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
@@ -119,10 +119,10 @@ Renderer::Context::Context(ID3D11Device* device, ID3D11DeviceContext* deviceCont
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    depthStencilDesc.DepthEnable = TRUE;
+    depthStencilDesc.DepthEnable = true;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-    depthStencilDesc.StencilEnable = FALSE;
+    depthStencilDesc.StencilEnable = false;
     depthStencilDesc.StencilReadMask = 0xFF;
     depthStencilDesc.StencilWriteMask = 0xFF;
     depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
@@ -136,14 +136,14 @@ Renderer::Context::Context(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_BACK;
-    rasterizerDesc.FrontCounterClockwise = TRUE;
+    rasterizerDesc.FrontCounterClockwise = true;
     rasterizerDesc.DepthBias = 0;
     rasterizerDesc.DepthBiasClamp = 0.0f;
     rasterizerDesc.SlopeScaledDepthBias = 0.0f;
-    rasterizerDesc.DepthClipEnable = TRUE;
-    rasterizerDesc.ScissorEnable = FALSE;
-    rasterizerDesc.MultisampleEnable = TRUE;
-    rasterizerDesc.AntialiasedLineEnable = FALSE;
+    rasterizerDesc.DepthClipEnable = true;
+    rasterizerDesc.ScissorEnable = false;
+    rasterizerDesc.MultisampleEnable = true;
+    rasterizerDesc.AntialiasedLineEnable = false;
 
     memset(lightDirection, 0, sizeof(lightDirection));
     memset(lightColour, 0, sizeof(lightColour));
@@ -233,9 +233,9 @@ void Renderer::Clear(int flags, D3D11_RECT *)
     ID3D11RasterizerState *rasterizerState = NULL;
 
     D3D11_BLEND_DESC blendDesc = {};
-    blendDesc.AlphaToCoverageEnable = FALSE;
-    blendDesc.IndependentBlendEnable = FALSE;
-    blendDesc.RenderTarget[0].BlendEnable = FALSE;
+    blendDesc.AlphaToCoverageEnable = false;
+    blendDesc.IndependentBlendEnable = false;
+    blendDesc.RenderTarget[0].BlendEnable = false;
     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
     blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
@@ -246,12 +246,12 @@ void Renderer::Clear(int flags, D3D11_RECT *)
     m_pDevice->CreateBlendState(&blendDesc, &blendState);
 
     D3D11_DEPTH_STENCIL_DESC depthDesc = {};
-    depthDesc.DepthEnable = (flags & CLEAR_DEPTH_FLAG) ? TRUE : FALSE;
+    depthDesc.DepthEnable = (flags & CLEAR_DEPTH_FLAG) ? true : false;
     depthDesc.DepthWriteMask = depthDesc.DepthEnable ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
     depthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    depthDesc.StencilEnable = FALSE;
-    depthDesc.StencilReadMask = 0xFFu;
-    depthDesc.StencilWriteMask = 0xFFu;
+    depthDesc.StencilEnable = false;
+    depthDesc.StencilReadMask = 0xFF;
+    depthDesc.StencilWriteMask = 0xFF;
     depthDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
     depthDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
     depthDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
@@ -265,8 +265,8 @@ void Renderer::Clear(int flags, D3D11_RECT *)
     D3D11_RASTERIZER_DESC rasterDesc = {};
     rasterDesc.FillMode = D3D11_FILL_SOLID;
     rasterDesc.CullMode = D3D11_CULL_NONE;
-    rasterDesc.DepthClipEnable = TRUE;
-    rasterDesc.MultisampleEnable = TRUE;
+    rasterDesc.DepthClipEnable = true;
+    rasterDesc.MultisampleEnable = true;
     m_pDevice->CreateRasterizerState(&rasterDesc, &rasterizerState);
 
     c.m_pDeviceContext->VSSetShader(screenClearVertexShader, NULL, 0);
@@ -818,7 +818,7 @@ void Renderer::CaptureThumbnail(ImageFileBuffer *pngOut)
     ID3D11Texture2D *stagingTexture = NULL;
 
     D3D11_BLEND_DESC blendDesc = {};
-    blendDesc.RenderTarget[0].BlendEnable = FALSE;
+    blendDesc.RenderTarget[0].BlendEnable = false;
     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
     blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
@@ -829,10 +829,10 @@ void Renderer::CaptureThumbnail(ImageFileBuffer *pngOut)
     m_pDevice->CreateBlendState(&blendDesc, &blendState);
 
     D3D11_DEPTH_STENCIL_DESC depthDesc = {};
-    depthDesc.DepthEnable = FALSE;
+    depthDesc.DepthEnable = false;
     depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
     depthDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    depthDesc.StencilEnable = FALSE;
+    depthDesc.StencilEnable = false;
     depthDesc.StencilReadMask = 0xFF;
     depthDesc.StencilWriteMask = 0xFF;
     depthDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
@@ -845,8 +845,8 @@ void Renderer::CaptureThumbnail(ImageFileBuffer *pngOut)
     D3D11_RASTERIZER_DESC rasterDesc = {};
     rasterDesc.FillMode = D3D11_FILL_SOLID;
     rasterDesc.CullMode = D3D11_CULL_NONE;
-    rasterDesc.DepthClipEnable = TRUE;
-    rasterDesc.MultisampleEnable = TRUE;
+    rasterDesc.DepthClipEnable = true;
+    rasterDesc.MultisampleEnable = true;
     m_pDevice->CreateRasterizerState(&rasterDesc, &rasterizerState);
 
     D3D11_SAMPLER_DESC samplerDesc = {};
