@@ -67,20 +67,20 @@ void Renderer::DrawVertexSetup(C4JRender::eVertexType vType, C4JRender::ePixelSh
         c.matrixDirty[MATRIX_MODE_MODELVIEW] = false;
     }
 
-    if (c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK1])
+    if (c.matrixDirty[MATRIX_MODE_MODELVIEW_PROJECTION])
     {
-        d3d11->Map(c.cbMatrix2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-        std::memcpy(mapped.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_UNK1), sizeof(DirectX::XMMATRIX));
-        d3d11->Unmap(c.cbMatrix2, 0);
-        c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK1] = false;
+        d3d11->Map(c.m_projectionMatrix, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        std::memcpy(mapped.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_PROJECTION), sizeof(DirectX::XMMATRIX));
+        d3d11->Unmap(c.m_projectionMatrix, 0);
+        c.matrixDirty[MATRIX_MODE_MODELVIEW_PROJECTION] = false;
     }
 
-    if (c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK2])
+    if (c.matrixDirty[MATRIX_MODE_MODELVIEW_TEXTURE])
     {
-        d3d11->Map(c.cbMatrix3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-        std::memcpy(mapped.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_UNK2), sizeof(DirectX::XMMATRIX));
-        d3d11->Unmap(c.cbMatrix3, 0);
-        c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK2] = false;
+        d3d11->Map(c.m_textureMatrix, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        std::memcpy(mapped.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_TEXTURE), sizeof(DirectX::XMMATRIX));
+        d3d11->Unmap(c.m_textureMatrix, 0);
+        c.matrixDirty[MATRIX_MODE_MODELVIEW_TEXTURE] = false;
     }
 
     this->UpdateFogState();

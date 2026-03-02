@@ -222,9 +222,9 @@ void Renderer::StateSetColour(float r, float g, float b, float a)
     const float colour[4] = {r, g, b, a};
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    d3d11->Map(c.cbColour, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    d3d11->Map(c.m_tintColorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, colour, sizeof(colour));
-    d3d11->Unmap(c.cbColour, 0);
+    d3d11->Unmap(c.m_tintColorBuffer, 0);
 }
 
 void Renderer::StateSetDepthMask(bool enable)
@@ -292,9 +292,9 @@ void Renderer::StateSetAlphaFunc(int, float param)
 
     const float alpha[4] = {0.0f, 0.0f, 0.0f, c.alphaTestEnabled ? c.alphaReference : 0.0f};
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    c.m_pDeviceContext->Map(c.cbAlphaTest, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    c.m_pDeviceContext->Map(c.m_alphaTestBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, alpha, sizeof(alpha));
-    c.m_pDeviceContext->Unmap(c.cbAlphaTest, 0);
+    c.m_pDeviceContext->Unmap(c.m_alphaTestBuffer, 0);
 }
 
 void Renderer::StateSetDepthFunc(int func)
@@ -376,9 +376,9 @@ void Renderer::StateSetAlphaTestEnable(bool enable)
 
     const float alpha[4] = {0.0f, 0.0f, 0.0f, enable ? c.alphaReference : 0.0f};
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    c.m_pDeviceContext->Map(c.cbAlphaTest, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    c.m_pDeviceContext->Map(c.m_alphaTestBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, alpha, sizeof(alpha));
-    c.m_pDeviceContext->Unmap(c.cbAlphaTest, 0);
+    c.m_pDeviceContext->Unmap(c.m_alphaTestBuffer, 0);
 }
 
 void Renderer::StateSetDepthSlopeAndBias(float slope, float bias)
@@ -415,13 +415,13 @@ void Renderer::UpdateFogState()
     const float fogColour[4] = {c.fogColourRed, c.fogColourGreen, c.fogColourBlue, 1.0f};
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    d3d11->Map(c.cbFogParams, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    d3d11->Map(c.m_fogParamsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, fogParams, sizeof(fogParams));
-    d3d11->Unmap(c.cbFogParams, 0);
+    d3d11->Unmap(c.m_fogParamsBuffer, 0);
 
-    d3d11->Map(c.cbFogColour, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    d3d11->Map(c.m_fogColourBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, fogColour, sizeof(fogColour));
-    d3d11->Unmap(c.cbFogColour, 0);
+    d3d11->Unmap(c.m_fogColourBuffer, 0);
 }
 
 void Renderer::StateSetVertexTextureUV(float u, float v)
@@ -430,9 +430,9 @@ void Renderer::StateSetVertexTextureUV(float u, float v)
     const float texgen[4] = {u - 1.0f, v - 1.0f, 0.0f, 0.0f};
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    c.m_pDeviceContext->Map(c.cbVertexTexcoord, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    c.m_pDeviceContext->Map(c.m_vertexTexcoordBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, texgen, sizeof(texgen));
-    c.m_pDeviceContext->Unmap(c.cbVertexTexcoord, 0);
+    c.m_pDeviceContext->Unmap(c.m_vertexTexcoordBuffer, 0);
 }
 
 void Renderer::UpdateTexGenState()
@@ -440,9 +440,9 @@ void Renderer::UpdateTexGenState()
     Context &c = this->getContext();
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    c.m_pDeviceContext->Map(c.cbTexGen, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    c.m_pDeviceContext->Map(c.m_texGenMatricesBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, c.texGenMatrices, sizeof(c.texGenMatrices));
-    c.m_pDeviceContext->Unmap(c.cbTexGen, 0);
+    c.m_pDeviceContext->Unmap(c.m_texGenMatricesBuffer, 0);
 }
 
 void Renderer::UpdateLightingState()
@@ -467,9 +467,9 @@ void Renderer::UpdateLightingState()
 
     const std::size_t lightingBytes = sizeof(c.lightDirection) + sizeof(c.lightColour) + sizeof(c.lightAmbientColour);
     D3D11_MAPPED_SUBRESOURCE mapped = {};
-    c.m_pDeviceContext->Map(c.cbLighting, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    c.m_pDeviceContext->Map(c.m_lightingStateBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     std::memcpy(mapped.pData, c.lightDirection, lightingBytes);
-    c.m_pDeviceContext->Unmap(c.cbLighting, 0);
+    c.m_pDeviceContext->Unmap(c.m_lightingStateBuffer, 0);
 
     c.lightingDirty = 0;
 }

@@ -4,15 +4,18 @@
 #include <unordered_map>
 #include <vector>
 
-#define MATRIX_MODE_MODELVIEW       0
-#define MATRIX_MODE_MODELVIEW_UNK1  1
-#define MATRIX_MODE_MODELVIEW_UNK2  2
-#define MATRIX_MODE_MODELVIEW_CBUFF 3
-#define MATRIX_MODE_MODELVIEW_MAX   4
+#define MATRIX_MODE_MODELVIEW            0
+#define MATRIX_MODE_MODELVIEW_PROJECTION 1
+#define MATRIX_MODE_MODELVIEW_TEXTURE    2
+#define MATRIX_MODE_MODELVIEW_CBUFF      3
+#define MATRIX_MODE_MODELVIEW_MAX        4
 
 #define STACK_TYPES    4
 #define STACK_SIZE     16
 #define MAX_MIP_LEVELS 5
+
+#define NUM_COMMAND_HANDLES 0x800000
+#define MAX_COMMAND_BUFFERS 16000
 
 class Renderer
 {
@@ -20,7 +23,6 @@ public:
     struct Context;
     struct CommandBuffer;
 
-    void Tick();
     void UpdateGamma(unsigned short usGamma);
     void MatrixMode(int type);
     void MatrixSetIdentity();
@@ -305,7 +307,6 @@ public:
         std::vector<Command> m_commands;
         std::uint64_t m_allocated;
         BYTE isActive;
-        BYTE paddingAfterActive[7];
     };
 
     struct DeferredCBuff
@@ -326,7 +327,6 @@ public:
         ID3D11DeviceContext *m_pDeviceContext;
         ID3DUserDefinedAnnotation *userAnnotation;
         DWORD annotateDepth;
-        BYTE paddingAfterFlags[12];
         DirectX::XMMATRIX matrixStacks[MATRIX_MODE_MODELVIEW_MAX][STACK_SIZE];
         bool matrixDirty[MATRIX_MODE_MODELVIEW_MAX];
         DWORD stackPos[MATRIX_MODE_MODELVIEW_MAX];
@@ -338,7 +338,6 @@ public:
         float alphaReference;
         BYTE depthWriteEnabled;
         BYTE fogEnabled;
-        BYTE paddingAfterFogFlags[2];
         float fogNearDistance;
         float fogFarDistance;
         float fogDensity;
@@ -355,40 +354,35 @@ public:
         DirectX::XMFLOAT4 lightColour[2];
         DirectX::XMFLOAT4 lightAmbientColour;
         ID3D11Buffer *m_modelViewMatrix;
-        ID3D11Buffer *cbMatrix1;
-        ID3D11Buffer *cbMatrix2;
-        ID3D11Buffer *cbMatrix3;
-        ID3D11Buffer *cbVertexTexcoord;
-        ID3D11Buffer *cbFogParams;
-        ID3D11Buffer *cbLighting;
-        ID3D11Buffer *cbTexGen;
-        ID3D11Buffer *cbAux0;
-        ID3D11Buffer *cbAux1;
-        ID3D11Buffer *cbColour;
-        ID3D11Buffer *cbFogColour;
-        ID3D11Buffer *cbAux2;
-        ID3D11Buffer *cbAlphaTest;
-        ID3D11Buffer *cbAux3;
-        ID3D11Buffer *cbAux4;
+        ID3D11Buffer *m_localTransformMatrix;
+        ID3D11Buffer *m_projectionMatrix;
+        ID3D11Buffer *m_textureMatrix;
+        ID3D11Buffer *m_vertexTexcoordBuffer;
+        ID3D11Buffer *m_fogParamsBuffer;
+        ID3D11Buffer *m_lightingStateBuffer;
+        ID3D11Buffer *m_texGenMatricesBuffer;
+        ID3D11Buffer *m_compressedTranslationBuffer;
+        ID3D11Buffer *m_thumbnailBoundsBuffer;
+        ID3D11Buffer *m_tintColorBuffer;
+        ID3D11Buffer *m_fogColourBuffer;
+        ID3D11Buffer *m_unkColorBuffer;
+        ID3D11Buffer *m_alphaTestBuffer;
+        ID3D11Buffer *m_clearColorBuffer;
+        ID3D11Buffer *m_forcedLODBuffer;
         uint64_t dynamicVertexBase;
         DWORD dynamicVertexOffset;
-        BYTE paddingAfterDynamicOffset[4];
         ID3D11Buffer *dynamicVertexBuffer;
-        BYTE paddingBeforeTexGen[8];
         DirectX::XMMATRIX texGenMatrices[2];
         Renderer::CommandBuffer *commandBuffer;
         DWORD recordingBufferIndex;
         DWORD recordingVertexType;
         DWORD recordingPrimitiveType;
         BYTE deferredModeEnabled;
-        BYTE paddingAfterDeferredModeEnabled[3];
         std::vector<DeferredCBuff> deferredBuffers;
         D3D11_BLEND_DESC blendDesc;
         D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
         D3D11_RASTERIZER_DESC rasterizerDesc;
         float blendFactor[4];
-        DWORD reservedContext0;
-        DWORD reservedContext1;
     };
 
     static DWORD tlsIdx;
@@ -438,12 +432,12 @@ public:
     BYTE reservedRendererByte1;
     BYTE paddingAfterRendererByte1[3];
     DWORD reservedRendererDword1;
-    void *reservedRendererPtr2;
-    void *reservedRendererPtr3;
-    uint64_t reservedRendererPtr1;
-    void *reservedRendererPtr4;
-    void *reservedRendererPtr5;
-    void *reservedRendererPtr6;
+    int16_t *m_commandHandleToIndex;
+    CommandBuffer **m_commandBuffers;
+    uint8_t *m_commandPrimitiveTypes;
+    DirectX::XMMATRIX *m_commandMatrices;
+    int *m_commandIndexToHandle;
+    uint8_t *m_commandVertexTypes;
     DWORD reservedRendererDword2;
     DWORD reservedRendererDword3;
     std::unordered_map<int, ID3D11BlendState *> managedBlendStates;

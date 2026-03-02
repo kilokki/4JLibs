@@ -105,13 +105,13 @@ void Renderer::Set_matrixDirty()
     const DirectX::XMMATRIX identity = DirectX::XMMatrixIdentity();
 
     c.matrixStacks[MATRIX_MODE_MODELVIEW][0] = identity;
-    c.matrixStacks[MATRIX_MODE_MODELVIEW_UNK1][0] = identity;
-    c.matrixStacks[MATRIX_MODE_MODELVIEW_UNK2][0] = identity;
+    c.matrixStacks[MATRIX_MODE_MODELVIEW_PROJECTION][0] = identity;
+    c.matrixStacks[MATRIX_MODE_MODELVIEW_TEXTURE][0] = identity;
     c.matrixStacks[MATRIX_MODE_MODELVIEW_CBUFF][0] = identity;
 
     c.matrixDirty[MATRIX_MODE_MODELVIEW] = true;
-    c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK1] = true;
-    c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK2] = true;
+    c.matrixDirty[MATRIX_MODE_MODELVIEW_PROJECTION] = true;
+    c.matrixDirty[MATRIX_MODE_MODELVIEW_TEXTURE] = true;
     c.matrixDirty[MATRIX_MODE_MODELVIEW_CBUFF] = true;
 
     activeVertexType = 0xFFFFFFFFu;

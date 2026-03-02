@@ -49,11 +49,11 @@ Renderer::Context::Context(ID3D11Device *device, ID3D11DeviceContext *deviceCont
     : m_pDeviceContext(deviceContext), userAnnotation(nullptr), annotateDepth(0), stackType(0), textureIdx(0), faceCullEnabled(1),
       depthTestEnabled(1), alphaTestEnabled(0), alphaReference(1.0f), depthWriteEnabled(1), fogEnabled(0), fogNearDistance(0.0f),
       fogFarDistance(0.0f), fogDensity(0.0f), fogColourRed(0.0f), fogColourBlue(0.0f), fogColourGreen(0.0f), fogMode(0), lightingEnabled(0),
-      lightingDirty(0), forcedLOD(0xFFFFFFFFu), m_modelViewMatrix(nullptr), cbMatrix1(nullptr), cbMatrix2(nullptr), cbMatrix3(nullptr),
-      cbVertexTexcoord(nullptr), cbFogParams(nullptr), cbLighting(nullptr), cbTexGen(nullptr), cbAux0(nullptr), cbAux1(nullptr), cbColour(nullptr),
-      cbFogColour(nullptr), cbAux2(nullptr), cbAlphaTest(nullptr), cbAux3(nullptr), cbAux4(nullptr), dynamicVertexBase(0), dynamicVertexOffset(0),
-      dynamicVertexBuffer(nullptr), commandBuffer(nullptr), recordingBufferIndex(0), recordingVertexType(0), recordingPrimitiveType(0),
-      deferredModeEnabled(0), deferredBuffers(), reservedContext0(0), reservedContext1(0)
+      lightingDirty(0), forcedLOD(0xFFFFFFFFu), m_modelViewMatrix(nullptr), m_localTransformMatrix(nullptr), m_projectionMatrix(nullptr),
+      m_textureMatrix(nullptr), m_vertexTexcoordBuffer(nullptr), m_fogParamsBuffer(nullptr), m_lightingStateBuffer(nullptr), m_texGenMatricesBuffer(nullptr),
+      m_compressedTranslationBuffer(nullptr), m_thumbnailBoundsBuffer(nullptr), m_tintColorBuffer(nullptr), m_fogColourBuffer(nullptr), m_unkColorBuffer(nullptr), m_alphaTestBuffer(nullptr),
+      m_clearColorBuffer(nullptr), m_forcedLODBuffer(nullptr), dynamicVertexBase(0), dynamicVertexOffset(0), dynamicVertexBuffer(nullptr),
+      commandBuffer(nullptr), recordingBufferIndex(0), recordingVertexType(0), recordingPrimitiveType(0), deferredModeEnabled(0), deferredBuffers()
 {
     deviceContext->QueryInterface(IID_PPV_ARGS(&userAnnotation));
     std::memset(matrixStacks, 0, sizeof(matrixStacks));
@@ -134,46 +134,46 @@ Renderer::Context::Context(ID3D11Device *device, ID3D11DeviceContext *deviceCont
     cbDesc.ByteWidth = sizeof(DirectX::XMMATRIX);
     cbData.pSysMem = &identity;
     device->CreateBuffer(&cbDesc, &cbData, &m_modelViewMatrix);
-    device->CreateBuffer(&cbDesc, &cbData, &cbMatrix1);
-    device->CreateBuffer(&cbDesc, &cbData, &cbMatrix2);
-    device->CreateBuffer(&cbDesc, &cbData, &cbMatrix3);
+    device->CreateBuffer(&cbDesc, &cbData, &m_localTransformMatrix);
+    device->CreateBuffer(&cbDesc, &cbData, &m_projectionMatrix);
+    device->CreateBuffer(&cbDesc, &cbData, &m_textureMatrix);
 
     cbDesc.ByteWidth = sizeof(zero4);
     cbData.pSysMem = zero4;
-    device->CreateBuffer(&cbDesc, &cbData, &cbVertexTexcoord);
-    device->CreateBuffer(&cbDesc, &cbData, &cbFogParams);
+    device->CreateBuffer(&cbDesc, &cbData, &m_vertexTexcoordBuffer);
+    device->CreateBuffer(&cbDesc, &cbData, &m_fogParamsBuffer);
 
     const UINT lightingBytes = sizeof(lightDirection) + sizeof(lightColour) + sizeof(lightAmbientColour);
     cbDesc.ByteWidth = lightingBytes;
     cbData.pSysMem = lightDirection;
-    device->CreateBuffer(&cbDesc, &cbData, &cbLighting);
+    device->CreateBuffer(&cbDesc, &cbData, &m_lightingStateBuffer);
 
     cbDesc.ByteWidth = sizeof(texGenMatrices);
     cbData.pSysMem = texGenMatrices;
-    device->CreateBuffer(&cbDesc, &cbData, &cbTexGen);
+    device->CreateBuffer(&cbDesc, &cbData, &m_texGenMatricesBuffer);
 
     cbDesc.ByteWidth = sizeof(zero4);
     cbData.pSysMem = zero4;
-    device->CreateBuffer(&cbDesc, &cbData, &cbAux0);
-    device->CreateBuffer(&cbDesc, &cbData, &cbAux1);
+    device->CreateBuffer(&cbDesc, &cbData, &m_compressedTranslationBuffer);
+    device->CreateBuffer(&cbDesc, &cbData, &m_thumbnailBoundsBuffer);
 
     cbDesc.ByteWidth = sizeof(one4);
     cbData.pSysMem = one4;
-    device->CreateBuffer(&cbDesc, &cbData, &cbColour);
-    device->CreateBuffer(&cbDesc, &cbData, &cbFogColour);
-    device->CreateBuffer(&cbDesc, &cbData, &cbAux2);
+    device->CreateBuffer(&cbDesc, &cbData, &m_tintColorBuffer);
+    device->CreateBuffer(&cbDesc, &cbData, &m_fogColourBuffer);
+    device->CreateBuffer(&cbDesc, &cbData, &m_unkColorBuffer);
 
     cbDesc.ByteWidth = sizeof(alpha4);
     cbData.pSysMem = alpha4;
-    device->CreateBuffer(&cbDesc, &cbData, &cbAlphaTest);
+    device->CreateBuffer(&cbDesc, &cbData, &m_alphaTestBuffer);
 
     cbDesc.ByteWidth = sizeof(zero4);
     cbData.pSysMem = zero4;
-    device->CreateBuffer(&cbDesc, &cbData, &cbAux3);
-    device->CreateBuffer(&cbDesc, &cbData, &cbAux4);
+    device->CreateBuffer(&cbDesc, &cbData, &m_clearColorBuffer);
+    device->CreateBuffer(&cbDesc, &cbData, &m_forcedLODBuffer);
 
     deviceContext->VSSetConstantBuffers(0, 10, &m_modelViewMatrix);
-    deviceContext->PSSetConstantBuffers(0, 6, &cbColour);
+    deviceContext->PSSetConstantBuffers(0, 6, &m_tintColorBuffer);
 
     {
         void *dynamicVertexPtr = operator new[](kVertexBufferSize);
@@ -327,24 +327,19 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
     m_pDeviceContext = this->InitialiseContext(true);
     m_pSwapChain = pSwapChain;
 
-    reservedRendererPtr2 = operator new[](0x1000000u);
-    reservedRendererPtr3 = operator new[](0x1F400u);
-    reservedRendererPtr4 = operator new[](0xFA000u);
-    reservedRendererPtr5 = operator new[](0xFA00u);
-    reservedRendererPtr6 = operator new[](0x3E80u);
-    {
-        void *reservedPtr = operator new[](0x3E80u);
-        reservedRendererPtr1 = reinterpret_cast<std::uint64_t>(reservedPtr);
-    }
+    m_commandHandleToIndex = new int16_t[NUM_COMMAND_HANDLES];
+    m_commandBuffers = new CommandBuffer *[MAX_COMMAND_BUFFERS];
+    m_commandMatrices = new DirectX::XMMATRIX[MAX_COMMAND_BUFFERS];
+    m_commandIndexToHandle = new int[MAX_COMMAND_BUFFERS];
+    m_commandVertexTypes = new uint8_t[MAX_COMMAND_BUFFERS];
+    m_commandPrimitiveTypes = new uint8_t[MAX_COMMAND_BUFFERS];
 
-    std::memset(reservedRendererPtr2, 0xFF, 0x1000000u);
-    std::memset(reservedRendererPtr3, 0, 0xFA00u);
-    std::memset(reservedRendererPtr5, 0, 0xFA00u);
-    std::memset(reservedRendererPtr6, 0, 0x3E80u);
-    {
-        void *reservedPtr = reinterpret_cast<void *>(reservedRendererPtr1);
-        std::memset(reservedPtr, 0, 0x3E80u);
-    }
+    std::memset(m_commandHandleToIndex, 0xFF, NUM_COMMAND_HANDLES);
+    std::memset(m_commandBuffers, 0, MAX_COMMAND_BUFFERS);
+    std::memset(m_commandIndexToHandle, 0, MAX_COMMAND_BUFFERS);
+    std::memset(m_commandVertexTypes, 0, MAX_COMMAND_BUFFERS);
+    std::memset(m_commandPrimitiveTypes, 0, MAX_COMMAND_BUFFERS);
+
     reservedRendererDword3 = 0;
 
     shouldScreenGrabNextFrame = 0;
@@ -597,9 +592,9 @@ void Renderer::SetClearColour(const float colourRGBA[4])
     if (c)
     {
         D3D11_MAPPED_SUBRESOURCE mapped = {};
-        c->m_pDeviceContext->Map(c->cbAux3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        c->m_pDeviceContext->Map(c->m_clearColorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         std::memcpy(mapped.pData, colourRGBA, sizeof(float) * 4);
-        c->m_pDeviceContext->Unmap(c->cbAux3, 0);
+        c->m_pDeviceContext->Unmap(c->m_clearColorBuffer, 0);
     }
 }
 
@@ -677,7 +672,7 @@ void Renderer::StartFrame()
     this->StateSetAlphaTestEnable(true);
 
     c.m_pDeviceContext->VSSetConstantBuffers(0, 10, &c.m_modelViewMatrix);
-    c.m_pDeviceContext->PSSetConstantBuffers(0, 6, &c.cbColour);
+    c.m_pDeviceContext->PSSetConstantBuffers(0, 6, &c.m_tintColorBuffer);
 
     D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0.0f;
@@ -853,7 +848,7 @@ void Renderer::CaptureThumbnail(ImageFileBuffer *pngOut)
         c.m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
         D3D11_MAPPED_SUBRESOURCE mapped = {};
-        c.m_pDeviceContext->Map(c.cbAux1, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+        c.m_pDeviceContext->Map(c.m_thumbnailBoundsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
         float *constants = static_cast<float *>(mapped.pData);
         if (i == 0)
         {
@@ -869,7 +864,7 @@ void Renderer::CaptureThumbnail(ImageFileBuffer *pngOut)
             constants[2] = 1.0f;
             constants[3] = 1.0f;
         }
-        c.m_pDeviceContext->Unmap(c.cbAux1, 0);
+        c.m_pDeviceContext->Unmap(c.m_thumbnailBoundsBuffer, 0);
         c.m_pDeviceContext->Draw(4, 0);
     }
 

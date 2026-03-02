@@ -11,7 +11,6 @@
 Renderer::CommandBuffer::CommandBuffer(bool full)
     : m_vertexBuffer(nullptr), m_vertexData(nullptr), m_vertexDataLength(0), m_commands(), m_allocated(0x1000), isActive(full ? 1 : 0)
 {
-    std::memset(paddingAfterActive, 0, sizeof(paddingAfterActive));
     m_vertexData = std::malloc(m_allocated);
     EnterCriticalSection(&Renderer::totalAllocCS);
     Renderer::totalAlloc += static_cast<int>(m_allocated);
@@ -265,16 +264,16 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
                 const float row[4] = {command.add_matrix.m_matrix[12], command.add_matrix.m_matrix[13], command.add_matrix.m_matrix[14],
                                       command.add_matrix.m_matrix[15]};
                 D3D11_MAPPED_SUBRESOURCE mappedAux0 = {};
-                c.m_pDeviceContext->Map(c.cbAux0, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedAux0);
+                c.m_pDeviceContext->Map(c.m_compressedTranslationBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedAux0);
                 std::memcpy(mappedAux0.pData, row, sizeof(row));
-                c.m_pDeviceContext->Unmap(c.cbAux0, 0);
+                c.m_pDeviceContext->Unmap(c.m_compressedTranslationBuffer, 0);
             }
             else
             {
                 D3D11_MAPPED_SUBRESOURCE mappedMatrix1 = {};
-                c.m_pDeviceContext->Map(c.cbMatrix1, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrix1);
+                c.m_pDeviceContext->Map(c.m_localTransformMatrix, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrix1);
                 std::memcpy(mappedMatrix1.pData, command.add_matrix.m_matrix, sizeof(command.add_matrix.m_matrix));
-                c.m_pDeviceContext->Unmap(c.cbMatrix1, 0);
+                c.m_pDeviceContext->Unmap(c.m_localTransformMatrix, 0);
                 matrixOverride = true;
             }
             break;
@@ -346,9 +345,9 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
         case COMMAND_SET_COLOR:
         {
             D3D11_MAPPED_SUBRESOURCE mappedColour = {};
-            c.m_pDeviceContext->Map(c.cbColour, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedColour);
+            c.m_pDeviceContext->Map(c.m_tintColorBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedColour);
             std::memcpy(mappedColour.pData, command.set_color.m_color, sizeof(command.set_color.m_color));
-            c.m_pDeviceContext->Unmap(c.cbColour, 0);
+            c.m_pDeviceContext->Unmap(c.m_tintColorBuffer, 0);
             break;
         }
         case COMMAND_SET_DEPTH_FUNC:
@@ -459,9 +458,9 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
     {
         const DirectX::XMMATRIX identity = DirectX::XMMatrixIdentity();
         D3D11_MAPPED_SUBRESOURCE mappedIdentity = {};
-        c.m_pDeviceContext->Map(c.cbMatrix1, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIdentity);
+        c.m_pDeviceContext->Map(c.m_localTransformMatrix, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIdentity);
         std::memcpy(mappedIdentity.pData, &identity, sizeof(identity));
-        c.m_pDeviceContext->Unmap(c.cbMatrix1, 0);
+        c.m_pDeviceContext->Unmap(c.m_localTransformMatrix, 0);
     }
 }
 
@@ -470,13 +469,12 @@ bool Renderer::CBuffCall(int index, bool full)
     EnterCriticalSection(&rtl_critical_section100);
 
     bool result = false;
-    std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
-    const int internalIndex = externalToInternal[index];
-    if (internalIndex >= 0)
+    const int commandIndex = m_commandHandleToIndex[index];
+    if (commandIndex >= 0)
     {
         Renderer::Context &c = this->getContext();
-        const std::uint8_t vertexType = static_cast<std::uint8_t *>(reservedRendererPtr6)[internalIndex];
-        const std::uint8_t primitiveType = reinterpret_cast<std::uint8_t *>(reservedRendererPtr1)[internalIndex];
+        const std::uint8_t vertexType = m_commandVertexTypes[commandIndex];
+        const std::uint8_t primitiveType = m_commandPrimitiveTypes[commandIndex];
 
         if (full)
         {
@@ -489,22 +487,22 @@ bool Renderer::CBuffCall(int index, bool full)
                 c.matrixDirty[MATRIX_MODE_MODELVIEW] = false;
             }
 
-            if (c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK1])
+            if (c.matrixDirty[MATRIX_MODE_MODELVIEW_PROJECTION])
             {
                 D3D11_MAPPED_SUBRESOURCE mappedMatrix2 = {};
-                c.m_pDeviceContext->Map(c.cbMatrix2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrix2);
-                std::memcpy(mappedMatrix2.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_UNK1), sizeof(DirectX::XMMATRIX));
-                c.m_pDeviceContext->Unmap(c.cbMatrix2, 0);
-                c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK1] = false;
+                c.m_pDeviceContext->Map(c.m_projectionMatrix, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrix2);
+                std::memcpy(mappedMatrix2.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_PROJECTION), sizeof(DirectX::XMMATRIX));
+                c.m_pDeviceContext->Unmap(c.m_projectionMatrix, 0);
+                c.matrixDirty[MATRIX_MODE_MODELVIEW_PROJECTION] = false;
             }
 
-            if (c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK2])
+            if (c.matrixDirty[MATRIX_MODE_MODELVIEW_TEXTURE])
             {
                 D3D11_MAPPED_SUBRESOURCE mappedMatrix3 = {};
-                c.m_pDeviceContext->Map(c.cbMatrix3, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrix3);
-                std::memcpy(mappedMatrix3.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_UNK2), sizeof(DirectX::XMMATRIX));
-                c.m_pDeviceContext->Unmap(c.cbMatrix3, 0);
-                c.matrixDirty[MATRIX_MODE_MODELVIEW_UNK2] = false;
+                c.m_pDeviceContext->Map(c.m_textureMatrix, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedMatrix3);
+                std::memcpy(mappedMatrix3.pData, this->MatrixGet(MATRIX_MODE_MODELVIEW_TEXTURE), sizeof(DirectX::XMMATRIX));
+                c.m_pDeviceContext->Unmap(c.m_textureMatrix, 0);
+                c.matrixDirty[MATRIX_MODE_MODELVIEW_TEXTURE] = false;
             }
 
             this->UpdateFogState();
@@ -524,9 +522,9 @@ bool Renderer::CBuffCall(int index, bool full)
             {
                 const float forcedLod[4] = {static_cast<float>(static_cast<int>(c.forcedLOD)), 0.0f, 0.0f, 0.0f};
                 D3D11_MAPPED_SUBRESOURCE mappedAux4 = {};
-                c.m_pDeviceContext->Map(c.cbAux4, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedAux4);
+                c.m_pDeviceContext->Map(c.m_forcedLODBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedAux4);
                 std::memcpy(mappedAux4.pData, forcedLod, sizeof(forcedLod));
-                c.m_pDeviceContext->Unmap(c.cbAux4, 0);
+                c.m_pDeviceContext->Unmap(c.m_forcedLODBuffer, 0);
                 pixelType = C4JRender::PIXEL_SHADER_TYPE_FORCELOD;
             }
 
@@ -551,12 +549,11 @@ bool Renderer::CBuffCall(int index, bool full)
             c.m_pDeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R16_UINT, 0);
         }
 
-        Renderer::CommandBuffer *commandBuffer = static_cast<Renderer::CommandBuffer **>(reservedRendererPtr3)[internalIndex];
-        commandBuffer->Render(static_cast<C4JRender::eVertexType>(vertexType), c, primitiveType);
+        m_commandBuffers[commandIndex]->Render(static_cast<C4JRender::eVertexType>(vertexType), c, primitiveType);
 
         if (full)
         {
-            this->MultWithStack(static_cast<DirectX::XMMATRIX *>(reservedRendererPtr4)[internalIndex]);
+            this->MultWithStack(m_commandMatrices[commandIndex]);
             c.matrixStacks[MATRIX_MODE_MODELVIEW_CBUFF][0] = DirectX::XMMatrixIdentity();
             c.matrixDirty[MATRIX_MODE_MODELVIEW_CBUFF] = true;
         }
@@ -572,7 +569,7 @@ void Renderer::CBuffClear(int index)
 {
     EnterCriticalSection(&rtl_critical_section100);
 
-    std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
+    std::int16_t *externalToInternal = static_cast<std::int16_t *>(m_commandHandleToIndex);
     const int internalIndex = externalToInternal[index];
     if (internalIndex >= 0)
     {
@@ -585,23 +582,19 @@ void Renderer::CBuffClear(int index)
 
 int Renderer::CBuffCreate(int count)
 {
-    const int kMaxExternalCBuffers = 0x800000;
-
     EnterCriticalSection(&rtl_critical_section100);
 
     int first = reservedRendererDword1;
-    std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
-
-    if (first < kMaxExternalCBuffers)
+    if (first < NUM_COMMAND_HANDLES)
     {
         int probe = first;
         int end = first + count;
         while (true)
         {
-            assert(first < kMaxExternalCBuffers);
+            assert(first < NUM_COMMAND_HANDLES);
 
             int cursor = probe;
-            while (cursor < end && cursor < kMaxExternalCBuffers && externalToInternal[cursor] == static_cast<std::int16_t>(-1))
+            while (cursor < end && cursor < NUM_COMMAND_HANDLES && m_commandHandleToIndex[cursor] == static_cast<std::int16_t>(-1))
             {
                 ++cursor;
             }
@@ -614,7 +607,7 @@ int Renderer::CBuffCreate(int count)
             ++first;
             ++probe;
             ++end;
-            if (first >= kMaxExternalCBuffers || end > kMaxExternalCBuffers)
+            if (first >= NUM_COMMAND_HANDLES || end > NUM_COMMAND_HANDLES)
             {
                 first = -1;
                 break;
@@ -626,7 +619,7 @@ int Renderer::CBuffCreate(int count)
             const int allocationEnd = first + count;
             for (int i = first; i < allocationEnd; ++i)
             {
-                externalToInternal[i] = static_cast<std::int16_t>(-2);
+                m_commandHandleToIndex[i] = static_cast<std::int16_t>(-2);
             }
 
             if (reservedRendererByte1)
@@ -655,23 +648,16 @@ void Renderer::CBuffDeferredModeEnd()
     EnterCriticalSection(&rtl_critical_section100);
     c.deferredModeEnabled = 0;
 
-    std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
-    int *internalToExternal = static_cast<int *>(reservedRendererPtr5);
-    std::uint8_t *internalVertexTypes = static_cast<std::uint8_t *>(reservedRendererPtr6);
-    std::uint8_t *internalPrimitiveTypes = reinterpret_cast<std::uint8_t *>(reservedRendererPtr1);
-    Renderer::CommandBuffer **internalBuffers = static_cast<Renderer::CommandBuffer **>(reservedRendererPtr3);
-    DirectX::XMMATRIX *internalMatrices = static_cast<DirectX::XMMATRIX *>(reservedRendererPtr4);
-
     for (std::vector<Renderer::DeferredCBuff>::const_iterator it = c.deferredBuffers.begin(); it != c.deferredBuffers.end(); ++it)
     {
         const Renderer::DeferredCBuff &deferred = *it;
-        const int existingIndex = externalToInternal[deferred.m_vertex_index];
+        const int existingIndex = m_commandHandleToIndex[deferred.m_vertex_index];
         if (existingIndex >= 0)
         {
             this->DeleteInternalBuffer(existingIndex);
         }
 
-        if (static_cast<int>(reservedRendererDword2 + reservedRendererDword3 + 10u) > 16000)
+        if (static_cast<int>(reservedRendererDword2 + reservedRendererDword3 + 10u) > MAX_COMMAND_BUFFERS)
         {
             DebugBreak();
         }
@@ -679,12 +665,12 @@ void Renderer::CBuffDeferredModeEnd()
         const int internalSlot = reservedRendererDword2;
         ++reservedRendererDword2;
 
-        externalToInternal[deferred.m_vertex_index] = static_cast<std::int16_t>(internalSlot);
-        internalToExternal[internalSlot] = deferred.m_vertex_index;
-        internalVertexTypes[internalSlot] = static_cast<std::uint8_t>(deferred.m_vertex_type);
-        internalPrimitiveTypes[internalSlot] = static_cast<std::uint8_t>(deferred.m_primitive_type);
-        internalBuffers[internalSlot] = deferred.m_command_buf;
-        internalMatrices[internalSlot] = deferred.m_matrix;
+        m_commandHandleToIndex[deferred.m_vertex_index] = static_cast<std::int16_t>(internalSlot);
+        m_commandIndexToHandle[internalSlot] = deferred.m_vertex_index;
+        m_commandVertexTypes[internalSlot] = static_cast<std::uint8_t>(deferred.m_vertex_type);
+        m_commandPrimitiveTypes[internalSlot] = static_cast<std::uint8_t>(deferred.m_primitive_type);
+        m_commandBuffers[internalSlot] = deferred.m_command_buf;
+        m_commandMatrices[internalSlot] = deferred.m_matrix;
     }
 
     c.deferredBuffers.clear();
@@ -700,17 +686,16 @@ void Renderer::CBuffDelete(int first, int count)
 {
     EnterCriticalSection(&rtl_critical_section100);
 
-    std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
     const int end = first + count;
     for (int i = first; i < end; ++i)
     {
-        const int internalIndex = externalToInternal[i];
+        const int internalIndex = m_commandHandleToIndex[i];
         if (internalIndex >= 0)
         {
             this->DeleteInternalBuffer(internalIndex);
         }
 
-        externalToInternal[i] = static_cast<std::int16_t>(-1);
+        m_commandHandleToIndex[i] = static_cast<std::int16_t>(-1);
     }
 
     LeaveCriticalSection(&rtl_critical_section100);
@@ -737,20 +722,13 @@ void Renderer::CBuffEnd()
     }
     else
     {
-        std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
-        int *internalToExternal = static_cast<int *>(reservedRendererPtr5);
-        std::uint8_t *internalVertexTypes = static_cast<std::uint8_t *>(reservedRendererPtr6);
-        std::uint8_t *internalPrimitiveTypes = reinterpret_cast<std::uint8_t *>(reservedRendererPtr1);
-        Renderer::CommandBuffer **internalBuffers = static_cast<Renderer::CommandBuffer **>(reservedRendererPtr3);
-        DirectX::XMMATRIX *internalMatrices = static_cast<DirectX::XMMATRIX *>(reservedRendererPtr4);
-
-        const int existingIndex = externalToInternal[c.recordingBufferIndex];
+        const int existingIndex = m_commandHandleToIndex[c.recordingBufferIndex];
         if (existingIndex >= 0)
         {
             this->DeleteInternalBuffer(existingIndex);
         }
 
-        if (static_cast<int>(reservedRendererDword2 + reservedRendererDword3 + 10u) > 16000)
+        if (static_cast<int>(reservedRendererDword2 + reservedRendererDword3 + 10u) > MAX_COMMAND_BUFFERS)
         {
             DebugBreak();
         }
@@ -758,12 +736,12 @@ void Renderer::CBuffEnd()
         const int internalSlot = reservedRendererDword2;
         ++reservedRendererDword2;
 
-        externalToInternal[c.recordingBufferIndex] = static_cast<std::int16_t>(internalSlot);
-        internalToExternal[internalSlot] = c.recordingBufferIndex;
-        internalVertexTypes[internalSlot] = static_cast<std::uint8_t>(c.recordingVertexType);
-        internalPrimitiveTypes[internalSlot] = static_cast<std::uint8_t>(c.recordingPrimitiveType);
-        internalBuffers[internalSlot] = c.commandBuffer;
-        internalMatrices[internalSlot] = c.matrixStacks[MATRIX_MODE_MODELVIEW_CBUFF][0];
+        m_commandHandleToIndex[c.recordingBufferIndex] = static_cast<std::int16_t>(internalSlot);
+        m_commandIndexToHandle[internalSlot] = c.recordingBufferIndex;
+        m_commandVertexTypes[internalSlot] = static_cast<std::uint8_t>(c.recordingVertexType);
+        m_commandPrimitiveTypes[internalSlot] = static_cast<std::uint8_t>(c.recordingPrimitiveType);
+        m_commandBuffers[internalSlot] = c.commandBuffer;
+        m_commandMatrices[internalSlot] = c.matrixStacks[MATRIX_MODE_MODELVIEW_CBUFF][0];
     }
 
     c.stackType = MATRIX_MODE_MODELVIEW;
@@ -787,10 +765,10 @@ int Renderer::CBuffSize(int index)
 
     unsigned int size = 0;
     EnterCriticalSection(&rtl_critical_section100);
-    const int internalIndex = static_cast<std::int16_t *>(reservedRendererPtr2)[index];
-    if (internalIndex >= 0)
+    const int commandIndex = m_commandHandleToIndex[index];
+    if (commandIndex >= 0)
     {
-        size = static_cast<Renderer::CommandBuffer **>(reservedRendererPtr3)[internalIndex]->GetAllocated();
+        size = m_commandBuffers[commandIndex]->GetAllocated();
     }
     LeaveCriticalSection(&rtl_critical_section100);
     return size;
@@ -812,20 +790,17 @@ void Renderer::CBuffStart(int index, bool full)
 
 void Renderer::CBuffTick()
 {
-    const int kMaxInternalCBuffers = 16000;
-
     EnterCriticalSection(&rtl_critical_section100);
 
-    Renderer::CommandBuffer **buffers = static_cast<Renderer::CommandBuffer **>(reservedRendererPtr3);
-    const int firstPending = kMaxInternalCBuffers - static_cast<int>(reservedRendererDword3);
-    for (int i = firstPending; i < kMaxInternalCBuffers; ++i)
+    const int firstPending = MAX_COMMAND_BUFFERS - static_cast<int>(reservedRendererDword3);
+    for (int i = firstPending; i < MAX_COMMAND_BUFFERS; ++i)
     {
-        Renderer::CommandBuffer *buffer = buffers[i];
+        Renderer::CommandBuffer *buffer = m_commandBuffers[i];
         if (buffer)
         {
             delete buffer;
         }
-        buffers[i] = nullptr;
+        m_commandBuffers[i] = nullptr;
     }
 
     reservedRendererDword3 = 0;
@@ -834,35 +809,26 @@ void Renderer::CBuffTick()
 
 void Renderer::DeleteInternalBuffer(int index)
 {
-    const int kMaxInternalCBuffers = 16000;
-
     EnterCriticalSection(&rtl_critical_section100);
 
-    Renderer::CommandBuffer **internalBuffers = static_cast<Renderer::CommandBuffer **>(reservedRendererPtr3);
-    DirectX::XMMATRIX *internalMatrices = static_cast<DirectX::XMMATRIX *>(reservedRendererPtr4);
-    std::uint8_t *internalVertexTypes = static_cast<std::uint8_t *>(reservedRendererPtr6);
-    std::uint8_t *internalPrimitiveTypes = reinterpret_cast<std::uint8_t *>(reservedRendererPtr1);
-    std::int16_t *externalToInternal = static_cast<std::int16_t *>(reservedRendererPtr2);
-    int *internalToExternal = static_cast<int *>(reservedRendererPtr5);
-
     ++reservedRendererDword3;
-    const int recycledSlot = kMaxInternalCBuffers - static_cast<int>(reservedRendererDword3);
+    const int recycledSlot = MAX_COMMAND_BUFFERS - static_cast<int>(reservedRendererDword3);
 
-    internalBuffers[recycledSlot] = internalBuffers[index];
-    internalMatrices[recycledSlot] = internalMatrices[index];
+    m_commandBuffers[recycledSlot] = m_commandBuffers[index];
+    m_commandMatrices[recycledSlot] = m_commandMatrices[index];
 
     if (reservedRendererDword2-- != 1)
     {
         const int lastActive = reservedRendererDword2;
 
-        internalBuffers[index] = internalBuffers[lastActive];
-        internalMatrices[index] = internalMatrices[lastActive];
-        internalVertexTypes[index] = internalVertexTypes[lastActive];
-        internalPrimitiveTypes[index] = internalPrimitiveTypes[lastActive];
+        m_commandBuffers[index] = m_commandBuffers[lastActive];
+        m_commandMatrices[index] = m_commandMatrices[lastActive];
+        m_commandVertexTypes[index] = m_commandVertexTypes[lastActive];
+        m_commandPrimitiveTypes[index] = m_commandPrimitiveTypes[lastActive];
 
-        const int externalIndex = internalToExternal[lastActive];
-        externalToInternal[externalIndex] = static_cast<std::int16_t>(index);
-        internalToExternal[index] = externalIndex;
+        const int commandIndex = m_commandIndexToHandle[lastActive];
+        m_commandHandleToIndex[commandIndex] = static_cast<std::int16_t>(index);
+        m_commandIndexToHandle[index] = commandIndex;
     }
 
     LeaveCriticalSection(&rtl_critical_section100);
