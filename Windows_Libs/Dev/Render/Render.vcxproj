@@ -133,6 +133,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib />
+    <PreBuildEvent>
+      <Command>cd shaders &amp;&amp; build.bat</Command>
+      <Message>Build Shaders</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -156,6 +160,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib />
+    <PreBuildEvent>
+      <Command>cd shaders &amp;&amp; build.bat</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Build Shaders</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="4J_Render.h" />
@@ -179,8 +189,8 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="VS_Compressed.h" />
     <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1.h" />
-    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_Lighting.h" />
-    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_Texgen.h" />
+    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_LIGHTING.h" />
+    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_TEXGEN.h" />
     <ClInclude Include="VS_ScreenClear.h" />
     <ClInclude Include="VS_ScreenSpace.h" />
     <ClInclude Include="zlib\zconf.h" />

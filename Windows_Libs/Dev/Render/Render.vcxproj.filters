@@ -24,6 +24,9 @@
     <Filter Include="Header Files\microprofile">
       <UniqueIdentifier>{6cbd8b95-ff51-42d2-a66f-282d3a11c042}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\generated">
+      <UniqueIdentifier>{3b83a35a-3f4e-4ae3-b7fa-17a84f509af5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -35,40 +38,7 @@
     <ClInclude Include="Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PS_Standard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PS_TextureProjection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PS_ForceLOD.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VS_ScreenClear.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VS_ScreenSpace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_Lighting.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_Texgen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VS_Compressed.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CompiledShaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PS_ScreenClear.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PS_ScreenSpace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="zlib\zconf.h">
@@ -109,6 +79,39 @@
     </ClInclude>
     <ClInclude Include="Profiler.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PS_ForceLOD.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="PS_ScreenClear.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="PS_ScreenSpace.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="PS_Standard.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="PS_TextureProjection.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="VS_Compressed.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_LIGHTING.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="VS_PF3_TF2_CB4_NB4_XW1_TEXGEN.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="VS_ScreenClear.h">
+      <Filter>Header Files\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="VS_ScreenSpace.h">
+      <Filter>Header Files\generated</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
