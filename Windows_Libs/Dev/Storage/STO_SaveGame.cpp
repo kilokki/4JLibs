@@ -284,14 +284,37 @@ void CSaveGame::GetSaveData(void *pvData, unsigned int *puiBytes)
     }
 }
 
+// @Patoke add
 bool CSaveGame::GetSaveUniqueNumber(INT *piVal)
 {
-    return false;
+    if (m_szSaveUniqueName[0] == '\0')
+    {
+        return 0;
+    }
+
+    int year, month, day, hour, minute;
+    sscanf(&m_szSaveUniqueName[4], "%02d%02d%02d%02d%02d", &year, &month, &day, &hour, &minute);
+
+    *piVal = 2678400 * year + 86400 * month + 3600 * day + 60 * hour + minute;
+
+    return true;
 }
 
+// @Patoke add
 bool CSaveGame::GetSaveUniqueFilename(char *pszName)
 {
-    return false;
+    if (m_szSaveUniqueName[0] == '\0')
+    {
+        return false;
+    }
+
+    memset(pszName, 0, 14);
+    for (int i = 0; i < 12; i++)
+    {
+        pszName[i] = m_szSaveUniqueName[i + 2];
+    }
+
+    return true;
 }
 
 void CSaveGame::SetSaveTitle(LPCWSTR pwchDefaultSaveName)
