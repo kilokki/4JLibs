@@ -95,7 +95,7 @@ HRESULT Renderer::SaveTextureData(const char* szFilename, D3DXIMAGE_INFO* pSrcIn
     image.width = pSrcInfo->Width;
     image.height = pSrcInfo->Height;
     image.version = PNG_IMAGE_VERSION;
-    image.format = PNG_FORMAT_BGRA;
+    image.format = PNG_FORMAT_RGBA;
 
     png_image_write_to_file(&image, szFilename, NULL, ppDataOut, NULL, NULL);
     return S_OK;
@@ -111,7 +111,7 @@ HRESULT Renderer::SaveTextureDataToMemory(void* pOutput, int outputCapacity, int
     image.height = height;
     dataEnd = (BYTE *)pOutput + outputCapacity;
     image.version = PNG_IMAGE_VERSION;
-    image.format = PNG_FORMAT_BGRA;
+    image.format = PNG_FORMAT_RGBA;
     dataStart = (BYTE*)pOutput;
     dataCurr = (BYTE*)pOutput;
 

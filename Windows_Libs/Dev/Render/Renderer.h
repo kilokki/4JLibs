@@ -470,7 +470,9 @@ public:
     std::unordered_map<int, ID3D11RasterizerState *> managedRasterizerStates;
     bool m_bShouldScreenGrabNextFrame;
     bool m_bSuspended;
-    BYTE paddingAfterSuspendState[2];
+    
+    // @Patoke add
+    ID3D11Texture2D *m_backBufferTexture = NULL;
 };
 
 // Singleton
